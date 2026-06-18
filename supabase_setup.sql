@@ -8,6 +8,7 @@ create table if not exists staff (
   name text not null,
   role text not null check (role in ('KTV','TVV')),
   note text default '',
+  pin text default '',
   active boolean default true,
   created_at timestamptz default now()
 );

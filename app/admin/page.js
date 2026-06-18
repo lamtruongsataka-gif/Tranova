@@ -71,6 +71,7 @@ function Records() {
   const [filterType, setFilterType] = useState('')
   const [filterMonth, setFilterMonth] = useState(new Date().toISOString().slice(0,7))
   const [filterName, setFilterName] = useState('')
+  const [detail, setDetail] = useState(null)
 
   useEffect(() => { fetchRecords() }, [filterType, filterMonth, filterName])
 
@@ -122,6 +123,8 @@ function Records() {
         <button className="btn btn-secondary btn-sm" onClick={exportCSV}>⬇ Xuất CSV</button>
       </div>
 
+      <div style={{fontSize:12,color:'var(--muted)',marginBottom:8}}>👆 Bấm vào một dòng để xem chi tiết đầy đủ (lý do complain, ghi chú…)</div>
+
       {loading ? <div className="text-center text-muted mt16">Đang tải...</div> : (
         <div className="tbl-wrap">
           <table>
@@ -135,7 +138,7 @@ function Records() {
               {records.length===0 && <tr><td colSpan={19} style={{textAlign:'center',color:'var(--muted)',padding:24}}>Chưa có dữ liệu</td></tr>}
               {records.map(r=>{
                 const cp = (r.complains||[]).map(c=>`${c.loai}×${c.soKH}`).join(', ')
-                return <tr key={r.id}>
+                return <tr key={r.id} onClick={()=>setDetail(r)} style={{cursor:'pointer'}}>
                   <td style={{whiteSpace:'nowrap'}}>{fmtDate(r.ngay)}</td>
                   <td><span className={`pill pill-${r.type.toLowerCase()}`}>{r.type}</span></td>
                   <td style={{fontWeight:600,whiteSpace:'nowrap'}}>{r.staff_name}</td>
@@ -154,13 +157,73 @@ function Records() {
                   <td>{r.type==='KTV'?r.fg:'-'}</td>
                   <td style={{fontSize:12,color:'var(--red)'}}>{r.type==='KTV'?cp:'-'}</td>
                   <td style={{fontSize:12,color:'var(--muted)',maxWidth:120}}>{r.note||r.lydo||''}</td>
-                  <td><button onClick={()=>deleteRecord(r.id)} style={{background:'none',border:'none',cursor:'pointer',color:'var(--red)',fontSize:16}}>×</button></td>
+                  <td><button onClick={(e)=>{e.stopPropagation(); deleteRecord(r.id)}} style={{background:'none',border:'none',cursor:'pointer',color:'var(--red)',fontSize:16}}>×</button></td>
                 </tr>
               })}
             </tbody>
           </table>
         </div>
       )}
+
+      {detail && (() => {
+        const dRow = (label, value) => (
+          <div style={{display:'flex',justifyContent:'space-between',gap:12,padding:'9px 0',borderBottom:'1px solid #f0f0f0'}}>
+            <span style={{color:'#777',fontSize:14}}>{label}</span>
+            <span style={{fontWeight:600,fontSize:14,textAlign:'right'}}>{value}</span>
+          </div>
+        )
+        return (
+          <div onClick={()=>setDetail(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',display:'flex',alignItems:'flex-end',justifyContent:'center',zIndex:1000}}>
+            <div onClick={e=>e.stopPropagation()} style={{background:'#fff',width:'100%',maxWidth:480,maxHeight:'88vh',overflowY:'auto',borderRadius:'16px 16px 0 0',padding:20}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+                <div style={{fontWeight:800,fontSize:18}}>Chi tiết báo cáo</div>
+                <button onClick={()=>setDetail(null)} style={{background:'none',border:'none',fontSize:26,cursor:'pointer',color:'#999',lineHeight:1}}>×</button>
+              </div>
+
+              {dRow('Ngày', fmtDate(detail.ngay))}
+              {dRow('Nhân viên', `${detail.staff_name} (${detail.type})`)}
+              {dRow('Ca', detail.ca)}
+              {dRow('Doanh thu', fmt(detail.dt)+' đ')}
+
+              {detail.type==='KTV' && <>
+                {dRow('Tổng tour', `${detail.ttour}  (YC ${detail.tyc} · KM ${detail.tkm} · KC ${detail.tkc})`)}
+                {dRow('Tăng ca', (detail.tc||0)+' phút')}
+                {dRow('Video MKT', `Nhanh ${detail.vn} · Dài ${detail.vd}`)}
+                {dRow('Upsell', detail.up)}
+                {dRow('Feedback', `Google/FB ${detail.fg} · Video FB ${detail.fv}`)}
+              </>}
+
+              {detail.type==='TVV' && <>
+                {dRow('Tổng khách', `${detail.ttour}  (Mới ${detail.tkm} · Cũ ${detail.tkc})`)}
+                {dRow('Đã chốt', detail.chot||0)}
+                {dRow('Tăng ca', (detail.tc||0)+' phút')}
+                {detail.lydo && dRow('Lý do chưa chốt', detail.lydo)}
+              </>}
+
+              {detail.type==='KTV' && detail.complains?.length>0 && (
+                <div style={{marginTop:14}}>
+                  <div style={{color:'var(--red)',fontWeight:700,marginBottom:6}}>⚠ Complain ({detail.complains.length})</div>
+                  {detail.complains.map((c,i)=>(
+                    <div key={i} style={{background:'#fff5f5',border:'1px solid #ffd6d6',borderRadius:8,padding:'8px 10px',marginBottom:6}}>
+                      <div style={{fontWeight:600,fontSize:14}}>{c.loai} · {c.soKH} khách</div>
+                      {c.lydo && <div style={{fontSize:13,color:'#555',marginTop:2}}>Lý do: {c.lydo}</div>}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {detail.note && (
+                <div style={{marginTop:14}}>
+                  <div style={{color:'#777',fontSize:13,marginBottom:4}}>Ghi chú</div>
+                  <div style={{fontSize:14,background:'#f7f7f7',borderRadius:8,padding:'8px 10px',whiteSpace:'pre-wrap'}}>{detail.note}</div>
+                </div>
+              )}
+
+              <button onClick={()=>setDetail(null)} className="btn btn-secondary" style={{width:'100%',marginTop:16}}>Đóng</button>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
@@ -271,6 +334,7 @@ function StaffManager() {
   const [newName, setNewName] = useState('')
   const [newRole, setNewRole] = useState('KTV')
   const [newNote, setNewNote] = useState('')
+  const [newPin, setNewPin] = useState('')
   const [adding, setAdding] = useState(false)
 
   useEffect(() => { fetchStaff() }, [])
@@ -284,9 +348,17 @@ function StaffManager() {
   async function addStaff() {
     if (!newName.trim()) return
     setAdding(true)
-    const { data } = await supabase.from('staff').insert({name:newName.trim(),role:newRole,note:newNote.trim(),active:true}).select().single()
+    const { data } = await supabase.from('staff').insert({name:newName.trim(),role:newRole,note:newNote.trim(),pin:newPin.trim(),active:true}).select().single()
     if (data) setStaff(prev=>[...prev,data])
-    setNewName(''); setNewNote(''); setAdding(false)
+    setNewName(''); setNewNote(''); setNewPin(''); setAdding(false)
+  }
+
+  async function setPin(s) {
+    const v = prompt(`Đặt/đổi mã PIN cho ${s.name} (để trống = bỏ khoá, ai cũng vào được):`, s.pin||'')
+    if (v===null) return
+    const pin = v.trim()
+    await supabase.from('staff').update({pin}).eq('id',s.id)
+    setStaff(prev=>prev.map(x=>x.id===s.id?{...x,pin}:x))
   }
 
   async function toggleActive(s) {
@@ -313,7 +385,10 @@ function StaffManager() {
             </select>
           </div>
         </div>
-        <div className="mb12"><label className="label">Ghi chú (tuỳ chọn)</label><input placeholder="vd: chuyên triệt, ca sáng..." value={newNote} onChange={e=>setNewNote(e.target.value)}/></div>
+        <div className="grid2 mb12">
+          <div><label className="label">Ghi chú (tuỳ chọn)</label><input placeholder="vd: chuyên triệt, ca sáng..." value={newNote} onChange={e=>setNewNote(e.target.value)}/></div>
+          <div><label className="label">Mã PIN (tuỳ chọn)</label><input inputMode="numeric" placeholder="vd: 2468" value={newPin} onChange={e=>setNewPin(e.target.value)}/></div>
+        </div>
         <button className="btn btn-primary" onClick={addStaff} disabled={adding||!newName.trim()}>
           {adding?'Đang thêm...':'+ Thêm'}
         </button>
@@ -328,9 +403,13 @@ function StaffManager() {
                 <div>
                   <div style={{fontWeight:700}}>{s.name}</div>
                   {s.note&&<div style={{fontSize:12,color:'var(--muted)'}}>{s.note}</div>}
+                  <div style={{fontSize:12,color:s.pin?'var(--green,#1a8a4a)':'var(--muted)',marginTop:2}}>
+                    {s.pin ? `🔒 PIN: ${s.pin}` : '🔓 Chưa đặt PIN (ai cũng vào được)'}
+                  </div>
                 </div>
               </div>
-              <div style={{display:'flex',gap:6}}>
+              <div style={{display:'flex',gap:6,flexWrap:'wrap',justifyContent:'flex-end'}}>
+                <button className="btn btn-secondary btn-sm" onClick={()=>setPin(s)}>PIN</button>
                 <button className={`btn btn-sm ${s.active?'btn-secondary':'btn-green'}`} onClick={()=>toggleActive(s)}>
                   {s.active?'Ẩn':'Hiện'}
                 </button>

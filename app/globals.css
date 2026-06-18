@@ -6,8 +6,8 @@
   --border: #E5E3DF;
   --text: #1A1A1A;
   --muted: #787068;
-  --accent: #C96A3A;
-  --accent-light: #FAF0EA;
+  --accent: #1877F2;
+  --accent-light: #E7F0FF;
   --green: #2D7A4F;
   --green-light: #EAF5EF;
   --blue: #2563EB;
@@ -106,7 +106,7 @@ tr:hover td { background: #FAFAF9; }
 .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 200; display: flex; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
 .receipt { background: #fff; border-radius: 14px; width: 100%; max-width: 400px; overflow: hidden; box-shadow: var(--shadow-lg); }
 .receipt-header { padding: 22px 20px 18px; text-align: center; }
-.receipt-header.ktv { background: linear-gradient(135deg,#C96A3A,#8B3A1A); color: #fff; }
+.receipt-header.ktv { background: linear-gradient(135deg,#1877F2,#0A52C2); color: #fff; }
 .receipt-header.tvv { background: linear-gradient(135deg,#2D7A4F,#1A4F32); color: #fff; }
 .receipt-logo { font-size: 13px; font-weight: 700; letter-spacing: .12em; opacity: .8; margin-bottom: 6px; }
 .receipt-name { font-size: 22px; font-weight: 800; margin-bottom: 2px; }

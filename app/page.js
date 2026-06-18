@@ -6,6 +6,9 @@ import { supabase } from '../lib/supabase'
 export default function HomePage() {
   const [staff, setStaff] = useState([])
   const [loading, setLoading] = useState(true)
+  const [pinFor, setPinFor] = useState(null)
+  const [pinInput, setPinInput] = useState('')
+  const [pinErr, setPinErr] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -23,8 +26,24 @@ export default function HomePage() {
   }
 
   function selectStaff(s) {
+    if (s.pin && String(s.pin).trim() !== '') {
+      setPinFor(s); setPinInput(''); setPinErr('')
+    } else {
+      enter(s)
+    }
+  }
+
+  function enter(s) {
     localStorage.setItem('spa_user', JSON.stringify(s))
     router.push('/report')
+  }
+
+  function submitPin() {
+    if (pinInput.trim() === String(pinFor.pin).trim()) {
+      enter(pinFor)
+    } else {
+      setPinErr('Mã PIN không đúng, thử lại')
+    }
   }
 
   const ktvList = staff.filter(s => s.role === 'KTV')
@@ -32,7 +51,7 @@ export default function HomePage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
-      <div style={{ background: 'linear-gradient(135deg,#C96A3A,#8B3A1A)', padding: '32px 20px 28px', textAlign: 'center' }}>
+      <div style={{ background: 'linear-gradient(135deg,#1877F2,#0A52C2)', padding: '32px 20px 28px', textAlign: 'center' }}>
         <div style={{ fontSize: 13, fontWeight: 700, color: 'rgba(255,255,255,.7)', letterSpacing: '.1em', marginBottom: 8 }}>✦ HỆ THỐNG BÁO CÁO</div>
         <div style={{ fontSize: 26, fontWeight: 800, color: '#fff' }}>Chọn tên của bạn</div>
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,.7)', marginTop: 6 }}>để bắt đầu nhập báo cáo ngày</div>
@@ -98,6 +117,23 @@ export default function HomePage() {
           </>
         )}
       </div>
+
+      {pinFor && (
+        <div onClick={()=>setPinFor(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.55)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:20}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:'#fff',width:'100%',maxWidth:340,borderRadius:16,padding:24,textAlign:'center'}}>
+            <div style={{fontSize:14,color:'var(--muted)'}}>Nhập mã PIN của</div>
+            <div style={{fontSize:20,fontWeight:800,marginBottom:16}}>{pinFor.name}</div>
+            <input autoFocus type="password" inputMode="numeric" value={pinInput}
+              onChange={e=>{setPinInput(e.target.value); setPinErr('')}}
+              onKeyDown={e=>{ if(e.key==='Enter') submitPin() }}
+              placeholder="••••"
+              style={{width:'100%',textAlign:'center',fontSize:24,letterSpacing:'0.3em',padding:'12px',border:'1.5px solid var(--border)',borderRadius:10,boxSizing:'border-box'}}/>
+            {pinErr && <div style={{color:'var(--red)',fontSize:13,marginTop:8}}>{pinErr}</div>}
+            <button onClick={submitPin} className="btn btn-primary" style={{width:'100%',marginTop:16}}>Vào</button>
+            <button onClick={()=>setPinFor(null)} className="btn btn-secondary" style={{width:'100%',marginTop:8}}>Huỷ</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
